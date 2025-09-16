@@ -2,6 +2,7 @@ import { App, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TF
 import { createDefaultRenderer, convert, IOpts } from './src/md-core';
 import { defaultTheme, THEME_VARIANTS } from './src/md-core/theme';
 import { copyWeChatRich } from './src/md-core/wechatCopy';
+import { preprocessObsidianImages, embedLocalImagesAsData, applyImageStyleFromAlt } from './src/utils/image';
 import { WechatPreviewView, WECHAT_PREVIEW_VIEW_TYPE } from './src/WechatPreviewView';
 
 // Remember to rename these classes and interfaces!
@@ -201,12 +202,17 @@ export default class MyPlugin extends Plugin {
 				new Notice('未找到当前 Markdown 文件');
 				return;
 			}
-			const content = await this.app.vault.read(file);
+			let content = await this.app.vault.read(file);
+			// 预处理内部图片语法 ![[...]]
+			content = preprocessObsidianImages(content, this, file.path);
 			const rawHtml = convert(content, this.renderer);
-			const finalHtml = this.postProcess(rawHtml);
+			const styledHtml = applyImageStyleFromAlt(rawHtml);
+			const finalHtml = this.postProcess(styledHtml);
 			if (options.copy) {
 				try {
-					const result = await copyWeChatRich({ html: finalHtml, primaryColor: this.settings.primaryColor, blockquoteBg: this.settings.blockquoteBg });
+					// 嵌入本地图片为 base64（在样式应用之后）
+					const embeddedHtml = await embedLocalImagesAsData(finalHtml, this);
+					const result = await copyWeChatRich({ html: embeddedHtml, primaryColor: this.settings.primaryColor, blockquoteBg: this.settings.blockquoteBg });
 					console.debug('[wechat-copy] copy method =', result.method);
 					new Notice('已复制为公众号富文本，可直接粘贴 (' + result.method + ')');
 				} catch (e) {
@@ -230,9 +236,12 @@ export default class MyPlugin extends Plugin {
 			}
 		}
 
-	convertRaw(md: string) {
-		const rawHtml = convert(md, this.renderer);
-		return this.postProcess(rawHtml);
+	convertRaw(md: string, filePath?: string) {
+		let src = md;
+		if (filePath) src = preprocessObsidianImages(src, this, filePath);
+		const rawHtml = convert(src, this.renderer);
+		const styled = applyImageStyleFromAlt(rawHtml);
+		return this.postProcess(styled);
 	}
 
 	private postProcess(html: string) {

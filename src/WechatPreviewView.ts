@@ -1,4 +1,5 @@
 import { ItemView, WorkspaceLeaf, TFile, MarkdownView, Notice } from 'obsidian'
+import { rewritePreviewImageSrc } from './utils/image'
 import type MyPlugin from '../main'
 
 export const WECHAT_PREVIEW_VIEW_TYPE = 'wechat-md-preview'
@@ -86,8 +87,9 @@ export class WechatPreviewView extends ItemView {
     const content = await this.app.vault.read(file)
     this.currentFile = file
     try {
-      const html = this.plugin.convertRaw(content)
+      const html = this.plugin.convertRaw(content, file.path)
       this.container.innerHTML = this.wrap(html)
+      rewritePreviewImageSrc(this.container, this.plugin)
     } catch (e) {
       console.error(e)
       new Notice('渲染失败，请查看控制台')
