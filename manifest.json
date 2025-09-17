@@ -3,9 +3,9 @@
 	"name": "WeChat Markdown Preview",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
+	"description": "Preview markdown files in WeChat Format",
 	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"authorUrl": "https://ocean.oneloved.cn",
+	"fundingUrl": "https://pic.oneloved.top/2025-09/1_1758095393420.png",
 	"isDesktopOnly": false
 }
